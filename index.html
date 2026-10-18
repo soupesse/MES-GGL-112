@@ -515,7 +515,7 @@ function mileState(id){ const o=BYID[id]; if(!o) return null; const s=st[id]; re
 function renderNightBar(ck){
   const el=document.getElementById("nightbar"), lab=nightLabel();
   let txt, cls="info";
-  if(!ck.dated) txt=`<b>Date de la nuit non définie.</b> Le suivi en direct (alertes, projections) fonctionne uniquement entre 22:45 et 07:00.`;
+  if(!ck.dated) txt=`<b>Date de la nuit non définie.</b> Le suivi en direct (alertes, projections) fonctionne uniquement entre ${fm(TS)} et ${fm(TE)}.`;
   else if(ck.phase==="avant") txt=ck.memeJour?`<b>${lab}.</b> Démarrage des travaux dans ${dureeTxt(toMin("22:00")-ck.NOW)}.`:`<b>${lab}.</b> Démarrage des travaux à 22:00.`;
   else if(ck.phase==="pendant") txt=`<b>${lab}.</b> Suivi en direct.`;
   else { txt=`<b>${lab}, terminée.</b> Bilan du réel par rapport au prévu.`; cls="done"; }
