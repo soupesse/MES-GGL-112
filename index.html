@@ -41,6 +41,23 @@ h1{font-family:var(--display);font-weight:700;font-size:clamp(30px,4.5vw,46px);l
 .btn:hover{border-color:var(--ink)}
 .btn.primary{background:var(--ink);color:var(--bg);border-color:var(--ink)}
 
+/* Écran d'identification */
+body.gate .wrap{display:none}
+.gate{max-width:900px;margin:0 auto;padding-block:28px;padding-left:16px;padding-right:16px}
+.gate h1{font-family:var(--display);font-weight:700;font-size:clamp(30px,5vw,44px);line-height:1;margin:0}
+.gate .lead{color:var(--muted);font-size:15px;margin:8px 0 22px}
+.tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:12px}
+.tile{display:flex;flex-direction:column;gap:5px;align-items:flex-start;text-align:left;padding:16px;border:1px solid var(--line);border-radius:14px;background:var(--panel);cursor:pointer;font:inherit;color:inherit;min-height:104px}
+.tile:hover{border-color:var(--ink)}
+.tile .n{font-family:var(--display);font-weight:700;font-size:23px;line-height:1.05}
+.tile .d{font-size:13px;color:var(--muted)}
+.tile .lock{margin-top:auto;font-size:12px;color:var(--muted)}
+.tile.adminT{border-color:var(--go)}
+.gpwd{max-width:420px;margin-top:18px;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px 20px}
+.gpwd h2{font-family:var(--display);font-size:26px;margin:0 0 4px}
+.gpwd input{width:100%;font-size:18px;padding:11px 12px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--ink);margin-top:12px}
+.gpwd .err{color:var(--stop);font-size:14px;min-height:20px;margin-top:6px}
+.gpwd .row{display:flex;gap:8px;justify-content:flex-end;margin-top:10px}
 /* Navigation */
 .navbar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;margin:18px 0 20px;padding-bottom:12px;border-bottom:3px solid var(--ink)}
 .tabs{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow-x:auto;max-width:100%;background:var(--panel);scrollbar-width:thin}
@@ -49,12 +66,14 @@ h1{font-family:var(--display);font-weight:700;font-size:clamp(30px,4.5vw,46px);l
 .tabs button[aria-current="page"]{background:var(--ink);color:var(--bg)}
 .adm{display:flex;align-items:center;gap:8px}
 .adm .pill{border-radius:999px;padding:3px 10px;font-size:13px;font-weight:600;background:var(--go-soft);color:var(--go);display:none}
-body.admin .adm .pill{display:inline-block}
-#admBtn,#eqBtn{padding:8px 14px;font-size:14px;font-weight:500}
-#eqBtn.on{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.adm .pill{display:inline-block;background:var(--track);color:var(--ink)}
+body.admin .adm .pill{background:var(--go-soft);color:var(--go)}
+body.team .adm .pill{background:var(--run-soft);color:var(--run)}
+#profBtn{padding:8px 14px;font-size:14px;font-weight:500}
 .view{display:none}
 .tabs .admin-tab,.tabs .team-tab{display:none}
 body.admin .tabs .admin-tab,body.team .tabs .team-tab{display:inline-block}
+body:not(.management) #alertsC{display:none}
 .view.on{display:block}
 
 /* Cadre KPI */
@@ -207,7 +226,6 @@ dialog.wide{width:min(620px,96vw)}
 dialog::backdrop{background:rgba(10,20,35,.45)}
 dialog h2{font-family:var(--display);font-size:24px;margin:0 0 10px}
 dialog input{border:1px solid var(--line);background:var(--bg);border-radius:6px;padding:7px 9px;color:var(--ink);font-size:15px}
-#admPwd{width:100%}
 dialog .err{color:var(--stop);font-size:13px;min-height:18px;margin-top:6px}
 dialog .row{display:flex;justify-content:flex-end;gap:8px;margin-top:12px;flex-wrap:wrap}
 .trow{display:grid;grid-template-columns:minmax(0,1fr) 110px 110px;gap:8px;align-items:center;padding:7px 0;border-bottom:1px solid var(--line);font-size:14px}
@@ -218,6 +236,18 @@ dialog .row{display:flex;justify-content:flex-end;gap:8px;margin-top:12px;flex-w
 </style>
 </head>
 <body>
+<section class="gate" id="gate" hidden aria-label="Identification">
+  <h1>Basculement GGL112, nuit 1</h1>
+  <p class="lead" id="gateLead">Choisissez votre profil pour accéder au suivi.</p>
+  <div class="tiles" id="tiles"></div>
+  <form class="gpwd" id="gpwd" hidden>
+    <h2 id="gpTitre">Profil</h2>
+    <div class="sub" id="gpSous"></div>
+    <input type="password" id="gpCode" placeholder="Mot de passe" autocomplete="current-password" aria-label="Mot de passe du profil">
+    <div class="err" id="gpErr" role="alert"></div>
+    <div class="row"><button type="button" class="btn" id="gpBack">Retour</button><button type="submit" class="btn primary">Entrer</button></div>
+  </form>
+</section>
 <div class="wrap">
   <header>
     <div><h1>Basculement GGL112, nuit 1</h1><div class="sub">Suivi de la nuit, du briefing à la restitution des installations. <span id="nightSub"></span></div></div>
@@ -230,9 +260,10 @@ dialog .row{display:flex;justify-content:flex-end;gap:8px;margin-top:12px;flex-w
       <button data-v="home" aria-current="page">Home</button>
       <button data-v="timeline">Timeline</button>
       <button data-v="detail">Avancement détaillé</button>
+      <button data-v="equipe" class="team-tab" id="eqBtn">Mes opérations</button>
       <button data-v="tladmin" class="admin-tab">Timeline Admin</button>
     </div>
-    <div class="adm"><span class="pill">Admin</span><button class="btn" id="eqBtn">Espace équipe</button><button class="btn" id="admBtn">Admin</button></div>
+    <div class="adm"><span class="pill" id="profPill">Client</span><button class="btn" id="profBtn">Changer de profil</button></div>
   </nav>
 
   <!-- HOME -->
@@ -254,6 +285,7 @@ dialog .row{display:flex;justify-content:flex-end;gap:8px;margin-top:12px;flex-w
   <!-- TIMELINE CLIENT -->
   <section class="view" id="v-timeline" aria-label="Timeline">
     <div class="nightbar" id="nbc"></div>
+    <div class="alerts" id="alertsC"></div>
     <div class="tlbox"><div class="tl" id="tlc"></div></div>
     <div class="legend">
       <span><i class="sw" style="width:18px;height:8px;background:var(--go)"></i>Terminé</span>
@@ -298,15 +330,6 @@ dialog .row{display:flex;justify-content:flex-end;gap:8px;margin-top:12px;flex-w
     </div>
   </section>
 </div>
-
-<dialog id="adm">
-  <form method="dialog" id="admForm">
-    <h2>Mode admin</h2>
-    <input type="password" id="admPwd" placeholder="Mot de passe" autocomplete="current-password" aria-label="Mot de passe admin">
-    <div class="err" id="admErr" role="alert"></div>
-    <div class="row"><button type="button" class="btn" id="admCancel">Annuler</button><button type="submit" class="btn primary">Valider</button></div>
-  </form>
-</dialog>
 
 <dialog id="bdlg">
   <h2>Signaler un blocage</h2>
@@ -560,7 +583,11 @@ function renderTimeline(){
   h+=`<div class="a" style="left:${X(REP)+3}px;top:${TOT}px;font-size:11px;color:var(--stop)">${live&&Math.abs(X(NOW)-X(REP))<110?"":"Reprise 04:20"}</div>`;
   box.style.height=(TOT+22)+"px"; box.style.width=W+"px"; box.innerHTML=h;
 
-  // alertes (direct) ou bilan (après la nuit)
+  document.getElementById("alerts").innerHTML = htmlAlertes(info,live,bilan,NOW);
+}
+
+/* Liste d'alertes : retards en direct, bilan après la nuit, blocages en tête */
+function construireAlertes(info,live,bilan,NOW){
   const al=[];
   if(live){
     info.forEach(I=>{
@@ -580,8 +607,10 @@ function renderTimeline(){
   const blks=OPS.filter(o=>st[o.id].blocage).map(o=>{ const b=st[o.id].blocage; return ["red",`<b>Blocage ${esc(b.par)}</b> à ${esc(b.at)} sur <b>${esc(o.t)}</b> : ${esc(b.motif)}${b.texte?`, ${esc(b.texte)}`:""}.`]; });
   al.unshift(...blks);
   if(blks.length && al.length>blks.length && al[al.length-1][0]==="ok") al.pop();
-  document.getElementById("alerts").innerHTML = al.map(a=>`<div class="alert ${a[0]}"><span class="ic">${a[0]==="red"?"!":a[0]==="ok"?"✓":"•"}</span><span>${a[1]}</span></div>`).join("");
+  return al;
 }
+const htmlAlertes=(info,live,bilan,NOW)=>construireAlertes(info,live,bilan,NOW)
+  .map(a=>`<div class="alert ${a[0]}"><span class="ic">${a[0]==="red"?"!":a[0]==="ok"?"✓":"•"}</span><span>${a[1]}</span></div>`).join("");
 
 /* Enregistrement de la date de la nuit (admin) */
 document.addEventListener("click",async e=>{
@@ -612,6 +641,8 @@ function renderClient(){
   else if(ck.phase==="pendant") txt=`<b>${lab}.</b> Travaux en cours. Avancement global : ${g} %.`;
   else txt=`<b>${lab}, terminée.</b> Avancement global : ${g} %.`;
   const nb=document.getElementById("nbc"); nb.className="nightbar"+(ck.phase==="apres"?" done":""); nb.innerHTML=`<span>${txt}</span>`;
+  const zoneAl=document.getElementById("alertsC");
+  zoneAl.innerHTML = isManagement() ? htmlAlertes(TL.map(L=>lineInfo(L,NOW,ck.phase==="pendant")),ck.phase==="pendant",ck.phase==="apres",NOW) : "";
   const box=document.getElementById("tlc");
   const W=Math.max(820, box.parentElement.clientWidth-16);
   const Lx=70, Rx=W-130, X=t=>Lx+(t-TS)/(TE-TS)*(Rx-Lx);
@@ -656,15 +687,10 @@ const teamOps=()=>AUTH&&DISC[AUTH.role]?OPS.filter(o=>DISC[AUTH.role].acts.inclu
 
 function renderEquipe(){
   const box=document.getElementById("eqBody");
-  if(!isTeam()){
-    box.innerHTML=`<div class="eqcard eqlogin"><h2>Espace équipe</h2><p class="sub">Saisissez le code de votre discipline pour mettre à jour vos opérations.</p>
-      <form id="eqForm"><input type="password" id="eqCode" placeholder="Code équipe" autocomplete="off" aria-label="Code équipe">
-      <div class="err" id="eqErr" role="alert"></div><button class="bigbtn run" type="submit">Entrer</button></form></div>`;
-    return;
-  }
+  if(!isTeam()){ box.innerHTML=""; return; }
   const d=DISC[AUTH.role], ops=teamOps(), p=Math.round(avg(ops));
   const sync = !sb ? `<span class="spill warn">Hors ligne, en attente</span>` : lastPushErr ? `<span class="spill bad">Erreur d'envoi</span>` : dirty.size ? `<span class="spill warn">Envoi…</span>` : `<span class="spill ok">Enregistré</span>`;
-  let h=`<div class="eqhead"><div><h2>Espace ${esc(d.label)}</h2><div class="sub">${esc("Basculement GGL112")}${NIGHT?", "+esc(nightLabel().replace("Nuit du ","nuit du ")):""}</div></div><div class="eqtools">${sync}<button class="btn" id="eqOut">Se déconnecter</button></div></div>
+  let h=`<div class="eqhead"><div><h2>Espace ${esc(d.label)}</h2><div class="sub">${esc("Basculement GGL112")}${NIGHT?", "+esc(nightLabel().replace("Nuit du ","nuit du ")):""}</div></div><div class="eqtools">${sync}<button class="btn" id="eqOut">Changer de profil</button></div></div>
     <div class="eqcard"><div class="eqkpi"><b>${p} %</b><span>avancement ${esc(d.label)}</span></div><div class="mbar${p===100?" done":""}" style="height:8px"><i style="width:${p}%"></i></div>
     <div class="sub" style="margin-top:6px">${cnt(ops,"fini")} finies, ${cnt(ops,"cours")} en cours, ${cnt(ops,"non")} à faire${ops.some(o=>st[o.id].blocage)?`, <b style="color:var(--stop)">${ops.filter(o=>st[o.id].blocage).length} bloquée(s)</b>`:""}</div></div>`;
   ops.forEach(o=>{
@@ -690,19 +716,8 @@ function renderEquipe(){
   });
   box.innerHTML=h;
 }
-document.getElementById("eqBody").addEventListener("submit",async e=>{
-  if(e.target.id!=="eqForm") return; e.preventDefault();
-  const code=document.getElementById("eqCode").value.trim(), err=document.getElementById("eqErr");
-  if(!code){ err.textContent="Saisissez votre code."; return; }
-  if(!sb){ err.textContent="Serveur indisponible. Vérifiez le réseau puis réessayez."; connect(); return; }
-  err.textContent="Vérification…";
-  const { data, error } = await sb.rpc("verifier_code",{p_code:code});
-  if(error){ err.textContent="Vérification impossible : "+error.message; return; }
-  if(!data){ err.textContent="Code incorrect."; return; }
-  setAuth(code,data); connect();
-});
 document.getElementById("eqBody").addEventListener("click",e=>{
-  if(e.target.id==="eqOut"){ setAuth(null); return; }
+  if(e.target.id==="eqOut"){ setAuth(null,null); return; }
   const btn=e.target.closest("button[data-e]"); if(!btn) return;
   const id=btn.closest(".eqcard").dataset.id, o=BYID[id], s=st[id], a=btn.dataset.e;
   if(!canEdit(o)) return;
@@ -789,12 +804,11 @@ function render(){
 function setView(v,opts={}){
   if(v==="timeline-admin") v="tladmin";
   if(v==="tladmin" && !isAdmin()) v="timeline";
-  if(v==="equipe"){ SHOWTEAM=true; try{ sessionStorage.setItem(ADMKEY+"-team","1"); }catch(e){} syncAdminUi(); }
+  if(v==="equipe" && !isTeam()) v="home";
   if(!["home","timeline","detail","tladmin","equipe"].includes(v)) v="home";
   view=v;
   document.querySelectorAll(".view").forEach(s=>s.classList.toggle("on",s.id==="v-"+v));
   document.querySelectorAll(".tabs button").forEach(b=>{ if(b.dataset.v===v) b.setAttribute("aria-current","page"); else b.removeAttribute("aria-current"); });
-  document.getElementById("eqBtn").classList.toggle("on",v==="equipe");
   const hs="#"+(v==="tladmin"?"timeline-admin":v);
   if(location.hash!==hs) history.replaceState(null,"",hs);
   render();
@@ -802,7 +816,6 @@ function setView(v,opts={}){
   else window.scrollTo(0,0);
 }
 document.querySelectorAll(".tabs button").forEach(b=>b.addEventListener("click",()=>setView(b.dataset.v)));
-document.getElementById("eqBtn").addEventListener("click",()=>setView("equipe"));
 document.addEventListener("click",e=>{ if(e.target.id==="syncRetry"){ lastPushErr=""; showSyncErr(); if(!sb) connect(); else pushChain=pushChain.then(()=>pushRows([...dirty])).catch(()=>{}); } });
 window.addEventListener("hashchange",()=>{ let v=location.hash.slice(1); if(v==="timeline-admin") v="tladmin"; if(v!==view) setView(v); });
 document.getElementById("cats").addEventListener("click",e=>{
@@ -811,45 +824,95 @@ document.getElementById("cats").addEventListener("click",e=>{
   setView("detail",{scroll:c.dataset.go});
 });
 
-/* ===== ADMIN ===== */
-let AUTH=null; try{ const raw=sessionStorage.getItem(ADMKEY); if(raw){ AUTH=raw.startsWith("{")?JSON.parse(raw):{code:raw,role:"admin"}; } }catch(e){ AUTH=null; }
+/* ===== PROFILS ET IDENTIFICATION ===== */
+const PROFILS=[
+  {role:"client",     nom:"Client",          desc:"Consultation du suivi",                 code:false},
+  {role:"management", nom:"Management",      desc:"Consultation et alertes de retard",     code:true},
+  {role:"vt",         nom:"VT",              desc:"Vérifications techniques, consignation 750V",    code:true},
+  {role:"indoor",     nom:"Instal Poste",    desc:"TRR, ASI SIG et BDD dans la guérite",   code:true},
+  {role:"outdoor",    nom:"Instal Campagne", desc:"BJ et basculement des câbles",          code:true},
+  {role:"telecom",    nom:"Telecom",         desc:"Basculement des câbles FO",             code:true},
+  {role:"essais",     nom:"Essais",          desc:"Essais et fin des essais",              code:true},
+  {role:"admin",      nom:"Admin",           desc:"Pilotage complet de la nuit",           code:true}
+];
+const nomProfil=r=>(PROFILS.find(p=>p.role===r)||{}).nom||"";
+let AUTH=null;
+try{
+  const raw=sessionStorage.getItem(ADMKEY)||localStorage.getItem(ADMKEY);
+  if(raw) AUTH=raw.startsWith("{")?JSON.parse(raw):{code:raw,role:"admin"};
+  if(AUTH && !PROFILS.some(p=>p.role===AUTH.role)) AUTH=null;
+}catch(e){ AUTH=null; }
 const isAdmin=()=>!!AUTH&&AUTH.role==="admin";
-const isTeam=()=>!!AUTH&&AUTH.role!=="admin";
-let SHOWTEAM=false; try{ SHOWTEAM=location.hash==="#equipe"||sessionStorage.getItem(ADMKEY+"-team")==="1"; if(SHOWTEAM) sessionStorage.setItem(ADMKEY+"-team","1"); }catch(e){}
+const isTeam=()=>!!AUTH&&!!DISC[AUTH.role];
+const isManagement=()=>!!AUTH&&AUTH.role==="management";
+
 function syncAdminUi(){
   document.body.classList.toggle("admin",isAdmin());
-  document.body.classList.toggle("team",SHOWTEAM||isTeam());
-  document.getElementById("eqBtn").textContent=isTeam()?"Espace "+DISC[AUTH.role].label:"Espace équipe";
-  document.getElementById("admBtn").textContent=isAdmin()?"Quitter l'admin":"Admin";
+  document.body.classList.toggle("team",isTeam());
+  document.body.classList.toggle("management",isManagement());
+  document.body.classList.toggle("gate",!AUTH);
+  document.getElementById("gate").hidden=!!AUTH;
+  document.getElementById("profPill").textContent=AUTH?nomProfil(AUTH.role):"";
+  const tb=document.getElementById("eqBtn");
+  if(tb) tb.textContent=isTeam()?"Mes opérations, "+DISC[AUTH.role].label:"Mes opérations";
 }
-function setAdmin(code){ setAuth(code,code?"admin":null); }
 function setAuth(code,role){
-  AUTH=code&&role?{code,role}:null;
-  try{ AUTH?sessionStorage.setItem(ADMKEY,JSON.stringify(AUTH)):sessionStorage.removeItem(ADMKEY); }catch(e){}
-  if(isTeam()){ SHOWTEAM=true; try{ sessionStorage.setItem(ADMKEY+"-team","1"); }catch(e){} }
+  AUTH=role?{code:code||null,role}:null;
+  try{
+    sessionStorage.removeItem(ADMKEY); localStorage.removeItem(ADMKEY);
+    if(AUTH){ const j=JSON.stringify(AUTH);
+      if(role==="admin") sessionStorage.setItem(ADMKEY,j); else localStorage.setItem(ADMKEY,j); }
+  }catch(e){}
   if(!AUTH){ dirty.clear(); persistLocal(); } else pruneDirty();
   lastPushErr=""; showSyncErr();
   syncAdminUi();
-  if(!isAdmin() && view==="tladmin") setView("timeline"); else render();
+  if(!AUTH){ ouvrirGate(); return; }
+  if(!isAdmin() && view==="tladmin") setView("timeline");
+  else if(!isTeam() && view==="equipe") setView("home");
+  else render();
 }
-const adm=document.getElementById("adm"), admPwd=document.getElementById("admPwd"), admErr=document.getElementById("admErr");
-document.getElementById("admBtn").onclick=()=>{
-  if(isAdmin()){ setAdmin(null); return; }
-  admPwd.value=""; admErr.textContent=""; adm.showModal(); admPwd.focus();
-};
-document.getElementById("admCancel").onclick=()=>adm.close();
-admPwd.addEventListener("input",()=>{ admErr.textContent=""; });
-document.getElementById("admForm").addEventListener("submit",async e=>{
-  e.preventDefault();
-  const code=admPwd.value;
-  if(!code){ admErr.textContent="Saisissez le mot de passe."; return; }
-  if(!sb){ admErr.textContent="Serveur indisponible. Vérifiez le réseau puis réessayez."; connect(); return; }
-  admErr.textContent="Vérification…";
-  const { data, error } = await sb.rpc("verifier_admin",{p_code:code});
-  if(error){ admErr.textContent="Vérification impossible : "+error.message; return; }
-  if(data!==true){ admErr.textContent="Mot de passe incorrect."; admPwd.select(); return; }
-  adm.close(); setAdmin(code); connect();
+const setAdmin=code=>setAuth(code,code?"admin":null);
+
+/* Écran d'identification */
+const gate=document.getElementById("gate"), gpwd=document.getElementById("gpwd"),
+      gpCode=document.getElementById("gpCode"), gpErr=document.getElementById("gpErr");
+let profilChoisi=null;
+function ouvrirGate(){
+  profilChoisi=null; gpwd.hidden=true; gpErr.textContent=""; gpCode.value="";
+  document.getElementById("tiles").hidden=false;
+  document.getElementById("gateLead").textContent="Choisissez votre profil pour accéder au suivi.";
+  syncAdminUi();
+}
+document.getElementById("tiles").innerHTML=PROFILS.map(p=>
+  `<button type="button" class="tile${p.role==="admin"?" adminT":""}" data-r="${p.role}">
+     <span class="n">${esc(p.nom)}</span><span class="d">${esc(p.desc)}</span>
+     <span class="lock">${p.code?"Mot de passe requis":"Accès direct"}</span></button>`).join("");
+document.getElementById("tiles").addEventListener("click",e=>{
+  const t=e.target.closest("[data-r]"); if(!t) return;
+  const p=PROFILS.find(x=>x.role===t.dataset.r);
+  if(!p.code){ setAuth(null,p.role); return; }
+  profilChoisi=p;
+  document.getElementById("tiles").hidden=true;
+  document.getElementById("gateLead").textContent="";
+  document.getElementById("gpTitre").textContent=p.nom;
+  document.getElementById("gpSous").textContent=p.desc;
+  gpErr.textContent=""; gpCode.value=""; gpwd.hidden=false; gpCode.focus();
 });
+document.getElementById("gpBack").addEventListener("click",ouvrirGate);
+gpCode.addEventListener("input",()=>{ gpErr.textContent=""; });
+gpwd.addEventListener("submit",async e=>{
+  e.preventDefault();
+  const code=gpCode.value.trim();
+  if(!code){ gpErr.textContent="Saisissez le mot de passe."; return; }
+  if(!sb){ gpErr.textContent="Serveur indisponible. Vérifiez le réseau puis réessayez."; connect(); return; }
+  gpErr.textContent="Vérification…";
+  const { data, error } = await sb.rpc("verifier_code",{p_code:code});
+  if(error){ gpErr.textContent="Vérification impossible : "+error.message; return; }
+  if(!data){ gpErr.textContent="Mot de passe incorrect."; gpCode.select(); return; }
+  if(data!==profilChoisi.role){ gpErr.textContent="Ce mot de passe correspond au profil "+nomProfil(data)+"."; gpCode.select(); return; }
+  setAuth(code,profilChoisi.role); connect();
+});
+document.getElementById("profBtn").addEventListener("click",()=>setAuth(null,null));
 
 /* ===== MODIFICATIONS ===== */
 function upd(id,patch){
@@ -1008,6 +1071,7 @@ window.addEventListener("error",e=>{ console.warn("[Suivi] Erreur :", e.message,
 window.addEventListener("unhandledrejection",e=>{ console.warn("[Suivi] Promesse rejetée :", (e.reason&&e.reason.message)||e.reason); });
 /* ===== DÉMARRAGE ===== */
 syncAdminUi();
+if(!AUTH) ouvrirGate();
 setView((location.hash||"#home").slice(1));
 connect();
 setInterval(()=>{ if(!sb) connect(); else if(dirty.size&&AUTH) pushChain=pushChain.then(()=>pushRows([...dirty])).catch(()=>{}); },30000);
